@@ -42,7 +42,9 @@ line, the number of bytes transmitted by the master is equal to those received.*
 #define ALARM_EN 	0x17  // 8 bits		R/W
 #define CONFIG 		0x18  // 16 bits	R/WH
 #define STATUS 		0x19  // 16 bits	R
-#define GET_PARAM	0x3F
+
+// get mask
+#define GET_PARAM	0x20
 
 
 
