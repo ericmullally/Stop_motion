@@ -17,8 +17,13 @@
 #define DISABLE		0xA8
 #define GET_STATUS	0xD0
 
-#define SPI_ERROR 	0xFF
 
+
+#define SPI2_CS_Pin GPIO_PIN_0
+#define SPI2_CS_GPIO_Port GPIOI
+
+#define MOTOR_ON_Pin GPIO_PIN_7
+#define MOTOR_ON_GPIO_Port GPIOI
 
 /*
  * @brief initial setup of the L6474
@@ -27,40 +32,31 @@
  * */
 uint8_t motor_setup(SPI_HandleTypeDef* spi){
 
-	// first send set param then the config
-	config_t conf;
-	conf.OSC_SEL 	= 0;  // 16Mhz
-	conf.EXT_CLK 	= 0;  // internal clock
-	conf.EN_TQREG 	= 0;  // torque regulation selected by registers
-	conf.OCD_SD 	= 1;  // bridges shut down on over current
-	conf.POW_SR		= 1;  // 75 bridge output slew rate values
-	conf.TOFF 		= 4;  // 16 microseconds
+	/*
+	 * Turn the motor on MOTOR_ON_Pin reset
+	 *  set CS low
+	 *  Disable the motor
+	 *  Write the CONFIG register
+	 * 	enable the motor
+	 * 	Read the CONFIG register
+	 *
+	 * */
+	config_t current_config;
+	uint8_t address = CONFIG ^ GET_PARAM;
+	uint8_t response[2]= {0};
 
-	uint8_t command = CONFIG;
-	uint8_t message[3];
-	message[0] = command;
-	message[1] = (conf.configuration  & 0xff);
-	message[2] = ((conf.configuration >> 8) & 0xff);
-	if (HAL_SPI_Transmit(spi, message, sizeof(message), HAL_MAX_DELAY) != HAL_OK) {
+	HAL_GPIO_WritePin(MOTOR_ON_GPIO_Port, MOTOR_ON_Pin, GPIO_PIN_SET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);
+
+	if(HAL_SPI_TransmitReceive(spi, (uint8_t*)&address, response, 3, HAL_MAX_DELAY) != HAL_OK){
 		return SPI_ERROR;
 	}
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);
+	HAL_Delay(1);
 
-	// check that the settings are correct
-	config_t new_conig;
-	uint8_t address = (CONFIG ^ GET_PARAM);
-	uint8_t response[2] = {0};
-
-	if(HAL_SPI_Transmit(spi, &address, 1, HAL_MAX_DELAY) != HAL_OK){
-		return SPI_ERROR;
-	}
-
-	if(HAL_SPI_Receive(spi, response, sizeof(response), HAL_MAX_DELAY) != HAL_OK){
-		return SPI_ERROR;
-	}
-	new_conig.configuration =  (response[1] << 8) | response[0];
-	return (new_conig.TOFF & 0xff);
+	current_config.configuration = (response[0] << 8) | response[1] ;
+	return response[0];
 
 }
-
-
 
