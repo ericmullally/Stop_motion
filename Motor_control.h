@@ -7,10 +7,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32h7xx_hal.h"
 #include "stdint.h"
-
-
 
 
 /*The devices (always slave) can be driven by an MCU (always master) sending commands
@@ -84,7 +81,6 @@ typedef union{
 
 
 
-uint8_t motor_setup(SPI_HandleTypeDef* spi);
 
 
 
