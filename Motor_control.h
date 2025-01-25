@@ -8,6 +8,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
+#include "stm32h7xx_hal.h"
 
 
 /*The devices (always slave) can be driven by an MCU (always master) sending commands
@@ -43,12 +44,13 @@ line, the number of bytes transmitted by the master is equal to those received.*
 #define ENABLE		0xB8
 
 #define SPI_ERROR 	0xFF
+#define BAD_PARAM	0xEF
 
 
-
-// get mask
+//Read write masks
 #define GET_PARAM	0x20
 #define SET_PARAM	0x00
+
 
 
 typedef union{
@@ -209,10 +211,16 @@ typedef struct{
 }motor_t;
 
 
-uint16_t motor_setup(SPI_HandleTypeDef* spi);
+typedef enum{
+	POWER_OFF,
+	POWER_ON
+}Power_states;
 
+uint8_t motor_setup(SPI_HandleTypeDef* spi);
 
+uint8_t L6474_write_receive_multi(SPI_HandleTypeDef *spi, uint8_t *data, uint8_t *rxbuffer, int size);
 
+void L6474_power_toggle(Power_states state);
 
 
 
